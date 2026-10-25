@@ -1,0 +1,43 @@
+# ---------- Data (do not publish) ----------
+# Dataset and any derived data files
+data/
+*.csv
+*.xlsx
+*.xls
+*.arff
+# Enterprise name mapping and cleaned/raw database versions
+mapiranje*
+baza_*
+dataset_*
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# ---------- Jupyter ----------
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# ---------- Trained models and artifacts ----------
+*.joblib
+*.pkl
+models/
+
+# ---------- Outputs and temporary files ----------
+outputs/
+figures/
+*.log
+
+# ---------- Secrets and configuration ----------
+.env
+*.key
+
+# ---------- IDE and OS files ----------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+~$*.xlsx
