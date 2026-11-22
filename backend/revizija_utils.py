@@ -117,16 +117,103 @@ KANDIDATI = {
 }
 
 
-def skoruj(df_raw, paket):
-    """Vjerovatnoća nepovoljnog mišljenja i kategorija rizika za nove izvještaje.
+# ---------------------------------------------------------------------------
+# Dio za aplikaciju: referentne vrijednosti, provjera unosa, skoriranje, usporedba
+# ---------------------------------------------------------------------------
+KLJUCNI_OMJERI = {
+    'zaduzenost_t': 'Zaduženost (obaveze / imovina)',
+    'kratk_obaveze_udio_t': 'Udio kratkoročnih obaveza u imovini',
+    'likvidnost_t': 'Likvidnost (obrtna imovina / kratkoročne obaveze)',
+    'marza_t': 'Poslovna marža',
+    'potraz_prihod_t': 'Potraživanja / prihodi',
+    'rast_prihoda': 'Rast prihoda',
+    'obrtna_udio': 'Udio obrtne imovine u imovini',
+}
+# sve pozicije osim poslovnog novčanog toka ne mogu biti negativne
+BEZ_NEGATIVNIH = [c for c in RAW_COLS if c != 'novcani_tok_poslovni_t']
 
-    df_raw: DataFrame s 23 kolone iz RAW_COLS (može imati i dodatne kolone, npr. ID).
-    paket: rječnik koji je sačuvao notebook (model, skup, pragovi...).
+
+def _f(v):
+    """Broj za JSON: NaN/inf -> None."""
+    try:
+        v = float(v)
+    except (TypeError, ValueError):
+        return None
+    return round(v, 4) if np.isfinite(v) else None
+
+
+def _brojevi(df_raw):
+    d = df_raw.copy()
+    d[RAW_COLS] = d[RAW_COLS].apply(pd.to_numeric, errors='coerce')
+    return d
+
+
+def napravi_referentne(df, rizik, prag):
+    """Referentne vrijednosti iz trening podataka (snimaju se u paket modela).
+
+    raspon: 1. i 99. percentil svake sirove pozicije (za upozorenje o neuobičajenom unosu)
+    medijan_uzorak / medijan_povisen: medijani ključnih omjera za sve izvještaje, odnosno
+    za izvještaje u kategoriji 'povišen rizik' (prema out-of-fold riziku).
     """
-    X = napravi_X(df_raw, paket['skup'])
-    p_povoljno = paket['model'].predict_proba(X)[:, 1]
-    rizik = 1 - p_povoljno
-    kat = np.where(rizik >= paket['prag_visok'], 'visok',
-                   np.where(rizik >= paket['prag_srednji'], 'srednji', 'nizak'))
-    out = pd.DataFrame({'rizik_negativno_misljenje': rizik, 'kategorija_rizika': kat}, index=df_raw.index)
+    d = ocisti(df)
+    raspon = {c: (float(d[c].quantile(0.01)), float(d[c].quantile(0.99))) for c in RAW_COLS}
+    om = izracunaj_omjere(d)[list(KLJUCNI_OMJERI)]
+    povisen = np.asarray(rizik) >= prag
+    return {'raspon': raspon,
+            'medijan_uzorak': om.median().to_dict(),
+            'medijan_povisen': om[povisen].median().to_dict()}
+
+
+def provjeri_unos(df_raw, paket):
+    """Lista upozorenja za svaki red (prazna lista = nema primjedbi)."""
+    nedostaju = [c for c in RAW_COLS if c not in df_raw.columns]
+    if nedostaju:
+        raise ValueError('Nedostaju kolone: ' + ', '.join(nedostaju))
+    b = df_raw[RAW_COLS].apply(pd.to_numeric, errors='coerce')
+    raspon = paket['referentne']['raspon']
+    out = []
+    for i in range(len(b)):
+        r, w = b.iloc[i], []
+        prazna = r.index[r.isna()].tolist()
+        if prazna:
+            w.append('Prazna ili nenumerička polja (zamijenjena medijanom): ' + ', '.join(prazna))
+        neg = [c for c in BEZ_NEGATIVNIH if pd.notna(r[c]) and r[c] < 0]
+        if neg:
+            w.append('Negativne vrijednosti gdje se ne očekuju: ' + ', '.join(neg))
+        izvan = [c for c, (lo, hi) in raspon.items() if pd.notna(r[c]) and (r[c] < lo or r[c] > hi)]
+        if len(izvan) >= 3:
+            w.append(f'{len(izvan)} od {len(RAW_COLS)} vrijednosti je izvan tipičnog raspona uzorka; '
+                     'procjena je manje pouzdana. Provjerite jedinice (iste kao u bazi podataka).')
+        out.append(w)
     return out
+
+
+def skoruj(df_raw, paket):
+    """Rizik, percentil i kategorija za nove izvještaje.
+
+    rizik_skor je interni skor (NIJE kalibrirana vjerovatnoća, model je sistematski previsok);
+    za prikaz korisniku koristiti 'percentil' i 'kategorija_rizika'.
+    percentil = udio izvještaja u uzorku (out-of-fold) čiji je rizik manji ili jednak ovom.
+    """
+    d = _brojevi(df_raw)
+    X = napravi_X(d, paket['skup'])
+    rizik = 1 - paket['model'].predict_proba(X)[:, 1]
+    ref = paket['oof_rizik_sortirano']
+    percentil = np.clip(np.searchsorted(ref, rizik, side='right') / len(ref) * 100, 0, 100)
+    kat = np.where(rizik >= paket['prag_povisen'], 'povišen', 'uobičajen')
+    return pd.DataFrame({'rizik_skor': np.round(rizik, 4), 'percentil': np.round(percentil, 0),
+                         'kategorija_rizika': kat, 'upozorenja': provjeri_unos(d, paket)},
+                        index=df_raw.index)
+
+
+def usporedba_omjera(df_raw, paket):
+    """Za svaki red: ključni omjeri naspram medijana uzorka i medijana grupe povišenog rizika.
+
+    Opisna usporedba, ne objašnjenje uzroka (koeficijenti modela nisu pouzdani za tumačenje).
+    """
+    d = _brojevi(df_raw)
+    om = izracunaj_omjere(ocisti(d))[list(KLJUCNI_OMJERI)]
+    ref = paket['referentne']
+    return [[{'omjer': k, 'naziv': KLJUCNI_OMJERI[k], 'vrijednost': _f(om.iloc[i][k]),
+              'medijan_uzorak': _f(ref['medijan_uzorak'][k]), 'medijan_povisen': _f(ref['medijan_povisen'][k])}
+             for k in KLJUCNI_OMJERI] for i in range(len(om))]
