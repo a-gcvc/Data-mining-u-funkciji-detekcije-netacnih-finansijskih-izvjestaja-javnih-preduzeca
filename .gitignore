@@ -41,3 +41,9 @@ figures/
 .DS_Store
 Thumbs.db
 ~$*.xlsx
+
+# ---------- Kiro (interni alat za razvoj, ne dio projekta) ----------
+.kiro/
+
+# ---------- Privremene/radne datoteke ----------
+*.bak

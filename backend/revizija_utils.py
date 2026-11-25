@@ -164,7 +164,7 @@ def napravi_referentne(df, rizik, prag):
             'medijan_povisen': om[povisen].median().to_dict()}
 
 
-def provjeri_unos(df_raw, paket):
+def provjeri_unos(df_raw, paket, ignoriraj=()):
     """Lista upozorenja za svaki red (prazna lista = nema primjedbi)."""
     nedostaju = [c for c in RAW_COLS if c not in df_raw.columns]
     if nedostaju:
@@ -174,7 +174,7 @@ def provjeri_unos(df_raw, paket):
     out = []
     for i in range(len(b)):
         r, w = b.iloc[i], []
-        prazna = r.index[r.isna()].tolist()
+        prazna = [c for c in r.index[r.isna()] if c not in ignoriraj]
         if prazna:
             w.append('Prazna ili nenumerička polja (zamijenjena medijanom): ' + ', '.join(prazna))
         neg = [c for c in BEZ_NEGATIVNIH if pd.notna(r[c]) and r[c] < 0]
@@ -182,13 +182,13 @@ def provjeri_unos(df_raw, paket):
             w.append('Negativne vrijednosti gdje se ne očekuju: ' + ', '.join(neg))
         izvan = [c for c, (lo, hi) in raspon.items() if pd.notna(r[c]) and (r[c] < lo or r[c] > hi)]
         if len(izvan) >= 3:
-            w.append(f'{len(izvan)} od {len(RAW_COLS)} vrijednosti je izvan tipičnog raspona uzorka; '
+            w.append(f'{len(izvan)} od {len(RAW_COLS) - len(ignoriraj)} vrijednosti je izvan tipičnog raspona uzorka; '
                      'procjena je manje pouzdana. Provjerite jedinice (iste kao u bazi podataka).')
         out.append(w)
     return out
 
 
-def skoruj(df_raw, paket):
+def skoruj(df_raw, paket, ignoriraj=()):
     """Rizik, percentil i kategorija za nove izvještaje.
 
     rizik_skor je interni skor (NIJE kalibrirana vjerovatnoća, model je sistematski previsok);
@@ -202,7 +202,7 @@ def skoruj(df_raw, paket):
     percentil = np.clip(np.searchsorted(ref, rizik, side='right') / len(ref) * 100, 0, 100)
     kat = np.where(rizik >= paket['prag_povisen'], 'povišen', 'uobičajen')
     return pd.DataFrame({'rizik_skor': np.round(rizik, 4), 'percentil': np.round(percentil, 0),
-                         'kategorija_rizika': kat, 'upozorenja': provjeri_unos(d, paket)},
+                         'kategorija_rizika': kat, 'upozorenja': provjeri_unos(d, paket, ignoriraj)},
                         index=df_raw.index)
 
 

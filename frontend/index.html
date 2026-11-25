@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="bs">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Finora | Procjena rizika revizorskog mišljenja</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%230e7c86'/%3E%3Ctext x='16' y='22' font-family='Georgia,serif' font-size='17' font-weight='700' fill='%23fff' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <!-- GORNJA TRAKA (brend + navigacija kroz korake; sakrivena na početnoj) -->
+    <header id="topbar" class="topbar" hidden>
+      <div class="topbar-inner">
+        <button type="button" class="brand" data-go="hero">
+          <span class="brand-mark">F</span> Finora
+        </button>
+        <nav class="stepper" aria-label="Navigacija kroz stranicu">
+          <button type="button" class="step" data-go="how"><span>1</span> Kako radi</button>
+          <button type="button" class="step" data-go="app"><span>2</span> Procjena</button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- POČETNA -->
+    <section id="hero" class="hero">
+      <div class="hero-content">
+        <p class="hero-eyebrow">Istraživački prototip · Asocijacija za napredak nauke i tehnologije</p>
+        <h1>Finora</h1>
+        <p class="hero-subtitle">Statistička procjena revizorskog mišljenja javnih preduzeća.</p>
+        <p class="hero-description">
+          Unesite bilansne pozicije javnog preduzeća i dobijte procjenu da li je vjerovatnije pozitivno ili
+          negativno revizorsko mišljenje, kao pomoć pri određivanju prioriteta revizije.
+        </p>
+        <div class="hero-actions">
+          <button type="button" id="start" class="btn-start">
+            <i class="fas fa-calculator"></i> Započni procjenu <i class="fas fa-arrow-right"></i>
+          </button>
+          <button type="button" id="howbtn" class="btn-how">
+            <i class="fas fa-circle-question"></i> Kako Finora radi?
+          </button>
+        </div>
+        <div class="stat-strip">
+          <div class="stat"><b id="chip-izvjestaji">312</b><span>izvještaja</span></div>
+          <div class="stat"><b id="chip-preduzeca">170</b><span>preduzeća</span></div>
+          <div class="stat"><b id="chip-godine">2004–2025</b><span>period</span></div>
+          <div class="stat"><b id="auc">0,74</b><span>AUC (orijentaciono)</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- KAKO RADI / O PROJEKTU -->
+    <section id="how" class="view" hidden>
+      <div class="container">
+        <div class="view-head">
+          <h2><i class="fas fa-compass"></i> Kako Finora radi?</h2>
+        </div>
+        <div class="panel">
+          <h3>Od bilansa do procjene u četiri koraka</h3>
+          <div class="cycle">
+            <div class="cycle-step" data-step="unos">
+              <i class="fas fa-table-list"></i><b>1. Unos</b><small>Bilansne pozicije</small>
+            </div>
+            <div class="cycle-step" data-step="omjeri">
+              <i class="fas fa-percent"></i><b>2. Omjeri</b><small>19 pokazatelja</small>
+            </div>
+            <div class="cycle-step" data-step="model">
+              <i class="fas fa-diagram-project"></i><b>3. Model</b><small>Statistička procjena</small>
+            </div>
+            <div class="cycle-step" data-step="procjena">
+              <i class="fas fa-gauge-high"></i><b>4. Procjena</b><small>Pozitivno / negativno</small>
+            </div>
+          </div>
+          <div id="cycle-desc" class="cycle-desc">
+            <i class="fas fa-circle-info"></i> Kliknite na korak za objašnjenje.
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="panel">
+            <h3><i class="fas fa-flask"></i> O projektu</h3>
+            <p>
+              Platforma <b>Finora</b> nastala je u sklopu istraživanja za
+              <b>Asocijaciju za napredak nauke i tehnologije</b>, na temu
+              <b>Data mining u detekciji netačnih finansijskih izvještaja javnih preduzeća</b>.
+            </p>
+            <p>
+              Revizori ne mogu detaljno pregledati svako preduzeće svake godine. Projekat provjerava može li
+              se iz bilansnih pozicija procijeniti rizik negativnog mišljenja, kako bi se kapaciteti
+              usmjerili na preduzeća kojima je pažnja najpotrebnija.
+            </p>
+            <p>
+              Procjena se zasniva na <b>logističkoj regresiji nad 19 finansijskih omjera</b> izračunatih iz
+              bilansnih pozicija preduzeća za tekuću i prethodnu godinu, a model razdvaja preduzeća s
+              pozitivnim od preduzeća s negativnim revizorskim mišljenjem.
+            </p>
+          </div>
+          <div class="panel">
+            <h3><i class="fas fa-triangle-exclamation"></i> Šta rezultat znači</h3>
+            <ul>
+              <li>
+                Procjena je <b>pozitivno</b> ili <b>negativno</b> mišljenje, prema modelu treniranom
+                isključivo na izvještajima koji su stvarno dobili jedno od ta dva mišljenja.
+              </li>
+              <li>
+                Za preduzeća čija bi stvarna situacija bila bliža mišljenju s rezervom ili suzdržavanju od
+                mišljenja, procjena je znatno manje pouzdana (model te slučajeve nije učio tokom treninga).
+              </li>
+              <li>Alat pomaže pri planiranju revizije, ali ne može u potpunosti zamijeniti rad revizora.</li>
+              <li>Tačnost je umjerena, pa je alat koristan za prioritete, a ne za konačnu odluku.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="center">
+          <button type="button" class="btn-start" data-go="app">
+            <i class="fas fa-calculator"></i> Započni procjenu
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- APLIKACIJA -->
+    <main id="app" class="view" hidden>
+      <div class="container">
+        <div class="view-head">
+          <h2><i class="fas fa-file-invoice-dollar"></i> Procjena revizorskog mišljenja</h2>
+          <p>
+            Iznosi u <b>KM</b>, kao cijeli iznosi (ne u hiljadama). Dozvoljene su tačke kao separatori
+            (2.500.000).
+          </p>
+        </div>
+        <div class="tabs">
+          <button id="tb1" aria-selected="true">Jedno preduzeće</button
+          ><button id="tb2" aria-selected="false">Više preduzeća (CSV)</button>
+        </div>
+
+        <div id="p1">
+          <div class="examples">
+            <span>Probajte s primjerom:</span
+            ><button type="button" class="chip-btn" id="primjerA">
+              <i class="fas fa-circle-check"></i> Stabilno preduzeće</button
+            ><button type="button" class="chip-btn" id="primjerB">
+              <i class="fas fa-triangle-exclamation"></i> Opterećeno preduzeće
+            </button>
+          </div>
+          <form id="forma" novalidate>
+            <div id="polja" class="form-grid"></div>
+            <p id="greska" class="error-message center"></p>
+            <div class="form-actions">
+              <button type="reset" class="btn-reset"><i class="fas fa-eraser"></i> Poništi</button
+              ><button type="submit" class="btn-submit"><i class="fas fa-chart-line"></i> Procijeni</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="p2" class="panel" hidden>
+          <p>
+            Učitajte CSV s jednim redom po izvještaju (kolona <code>ID_preduzeca</code> je opciona).
+            <a href="/api/predlozak">Preuzmi predložak</a>. Preduzeća se rangiraju od najvišeg procijenjenog
+            rizika.
+          </p>
+          <input type="file" id="datoteka" accept=".csv,text/csv" />
+          <div class="form-actions">
+            <button class="btn-submit" id="posalji"><i class="fas fa-ranking-star"></i> Rangiraj</button
+            ><button class="btn-reset" id="preuzmi" hidden>
+              <i class="fas fa-download"></i> Preuzmi rezultate
+            </button>
+          </div>
+          <p id="greska2" class="error-message center"></p>
+          <div id="tabela" class="scroll"></div>
+        </div>
+
+        <!-- REZULTATI -->
+        <div id="results" hidden>
+          <div class="results-header">
+            <h2><i class="fas fa-chart-simple"></i> Rezultati procjene</h2>
+            <button type="button" id="novo" class="btn-new">
+              <i class="fas fa-plus-circle"></i> Nova procjena
+            </button>
+          </div>
+          <div id="riskcard" class="risk-card">
+            <div class="risk-level">
+              <i id="risk-icon" class="fas fa-circle-info"></i><span id="risk-text"></span>
+            </div>
+            <p id="risk-reco"></p>
+          </div>
+          <div class="charts-container">
+            <div class="chart-card">
+              <h3>Rizik u odnosu na ostale izvještaje</h3>
+              <p class="chart-lead" id="lead-pct"></p>
+              <div class="donut">
+                <canvas id="chartPct"></canvas>
+                <div class="donut-center" id="center-pct"></div>
+              </div>
+            </div>
+            <div class="chart-card">
+              <h3>Tačnost ove vrste procjene u prošlosti</h3>
+              <p class="chart-lead" id="lead-rel"></p>
+              <div class="donut">
+                <canvas id="chartRel"></canvas>
+                <div class="donut-center" id="center-rel"></div>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <h3><i class="fas fa-sliders"></i> Ključni pokazatelji naspram uzorka</h3>
+            <div id="gauges"></div>
+            <div class="legend">
+              <span><i class="m firm"></i> ovo preduzeće</span
+              ><span><i class="m med"></i> medijan uzorka</span
+              ><span><i class="m hi"></i> medijan grupe povišenog rizika</span>
+            </div>
+            <p class="small">Opisna usporedba, a ne objašnjenje uzroka rezultata.</p>
+          </div>
+          <div id="warns"></div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <p>
+          <b>Finora</b> · istraživački prototip za Asocijaciju za napredak nauke i tehnologije · Data
+          mining u detekciji netačnih finansijskih izvještaja javnih preduzeća
+        </p>
+        <p class="small">
+          Alat pomaže pri planiranju revizije i ne može u potpunosti zamijeniti rad revizora.
+        </p>
+      </div>
+    </footer>
+
+    <div id="loading" class="loading-overlay" hidden>
+      <div class="loading-spinner"></div>
+      <p>Analiziram podatke...</p>
+    </div>
+    <script src="js/app.js" defer></script>
+  </body>
+</html>
